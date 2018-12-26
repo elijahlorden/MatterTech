@@ -1,0 +1,16 @@
+[
+{
+  "modid": "mattertech",
+  "name": "Matter Tech",
+  "description": "A tech mod focused around manipulation of matter",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Lord_Lorden"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

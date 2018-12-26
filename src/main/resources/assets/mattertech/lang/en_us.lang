@@ -1,0 +1,16 @@
+item.ItemCrystalLithium.name=Lithium Crystal
+
+item.ItemTargetingScanner.name=Targeting Scanner
+item.ItemTargetingScanner.tip=The Targeting Scanner is used to establish a targeting lock on entities and blocks.
+
+item.ItemMolecularScanner.name=Molecular Scanner
+item.ItemMolecularScanner.tip=The Molecular Scanner is used to scan an area locked by a Targeting Scanner and build a digital pattern of all objects selected by the lock.
+
+
+
+
+
+
+
+
+
