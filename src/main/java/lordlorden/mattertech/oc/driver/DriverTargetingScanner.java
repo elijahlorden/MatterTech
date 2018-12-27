@@ -2,6 +2,7 @@ package lordlorden.mattertech.oc.driver;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import li.cil.oc.api.Network;
 import li.cil.oc.api.internal.Rack;
@@ -11,7 +12,11 @@ import li.cil.oc.api.machine.Context;
 import li.cil.oc.api.network.Message;
 import li.cil.oc.api.network.Node;
 import li.cil.oc.api.network.Visibility;
+import lordlorden.mattertech.util.Util;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class DriverTargetingScanner extends RackMountableDriverBase {
@@ -210,6 +215,15 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 		return new Object[] {tooEarly ? 3 : 0};
 	}
 	
+	@Callback(doc = "function():table; Returns a table of entities contained within an active targeting lock; returns an empty table if there is no active lock.", limit = 10)
+	public Object[] getEntities(Context context, Arguments args) {
+		if (lockState == lockStateActive) {
+			System.out.println("getEntites");
+			return new Object[] {buildTableFromEntityList(getEntities())};
+		}
+		return new Object[] {new HashMap<Object, Object>()};
+	}
+	
 	@Callback(doc = "function():table; Get the absolute position of the scanner; Returns a table containing absolute coordinates and dimension ID", direct = false, limit = 10)
 	public Object[] getPosition(Context context, Arguments args) {
 		return new Object[] {new HashMap<Object, Object>(){{
@@ -286,8 +300,8 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 	private void stabilize(int perc) {
 		if (timeSinceLastStab < minTimeBetweenStabs) perc = -perc; //Invert the percentage if stabilize was called too early
 		lockStrength += perc;
-		System.out.println(perc);
-		System.out.println(lockStrength);
+		//System.out.println(perc);
+		//System.out.println(lockStrength);
 		timeSinceLastStab = 0;
 		host.markChanged(host.indexOfMountable(this));
 	}
@@ -306,7 +320,7 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 	}
 	
 	private double initEnergy() {
-		return Math.pow(Math.abs(tX - tX2) * Math.abs(tZ - tZ2) * Math.abs(tY - tY2)/25, 2) + initEnergy;
+		return Math.pow((Math.abs(tX - host.xPosition()) + Math.abs(tZ - host.zPosition()) + Math.abs(tY - host.yPosition()))/25, 2) + initEnergy;
 	}
 	
 	private double getVolume() {
@@ -322,10 +336,48 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 		}
 	}
 	
+	private HashMap<Object, Object> buildTableFromEntityList(ArrayList<Entity> entities) {
+		HashMap<Object, Object> table = new HashMap<Object, Object>();
+		System.out.println(entities.size() + " entities in area");
+		int i = 0;
+		for (Entity e : entities) {
+			i++;
+			HashMap<Object, Object> eTbl = new HashMap<Object, Object>();
+			String entityClassName = e.getClass().getName();
+			entityClassName = entityClassName.substring(entityClassName.lastIndexOf('.')+1);
+			System.out.println(entityClassName);
+			eTbl.put("type", entityClassName);
+			eTbl.put("name", e.getName());
+			switch(entityClassName) {
+			case "EntityPlayerMP":
+				eTbl.put("type", "EntityPlayer");
+				break;
+			case "EntityItem":
+				break;
+			}
+			table.put(i, eTbl);
+		}
+		return table;
+	}
+	
 	private ArrayList<Entity> getEntities() {
-		
-		
-		return null;
+		if (!lockEntities) return new ArrayList<Entity>();
+		ArrayList<Entity> entities = null;
+		if (targetType == targetTypePos) {
+			entities = Util.getEntitiesInAreaInclusive(tX, tY, tZ, tX+1, tY+1, tZ+1, host.world(), Entity.class);
+		} else if (targetType == targetTypeAreaCube) {
+			entities = Util.getEntitiesInAreaInclusive(tX, tY, tZ, tX2, tY2, tZ2, host.world(), Entity.class);
+		} else if (targetType == targetTypeAreaSphere) {
+			entities = Util.getEntitiesInAreaInclusiveRadius(tX, tY, tZ, tRadius, host.world(), Entity.class);
+		} else {
+			return new ArrayList<Entity>();
+		}
+		for (Iterator<Entity> iterator = entities.iterator(); iterator.hasNext();) {
+			Entity entity = iterator.next();
+			if (!lockPlayers && entity instanceof EntityPlayer) { iterator.remove(); continue; }
+			if (!lockItems && entity instanceof EntityItem) { iterator.remove(); continue; }
+		}
+		return entities;
 	}
 
 	@Override

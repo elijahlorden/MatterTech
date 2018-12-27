@@ -61,13 +61,13 @@ public class Util {
 			}
 		}
 		
-		public ArrayList<Entity> getEntitiesInAreaInclusive(double x1, double y1, double z1, double x2, double y2, double z2, World world, Entity clazz) {
-			return (ArrayList<Entity>) world.getEntitiesWithinAABB(clazz.getClass(), new AxisAlignedBB(x1, y1, z1, x2, y2, z2));
+		public static ArrayList<Entity> getEntitiesInAreaInclusive(double x1, double y1, double z1, double x2, double y2, double z2, World world, Class<Entity> clazz) {
+			return (ArrayList<Entity>) world.getEntitiesWithinAABB(clazz, new AxisAlignedBB(x1, y1, z1, x2, y2, z2));
 		}
 		
-		
-		
-		
+		public static ArrayList<Entity> getEntitiesInAreaInclusiveRadius(double x1, double y1, double z1, double radius, World world, Class<Entity> clazz) {
+			return (ArrayList<Entity>) world.getEntitiesWithinAABB(clazz, new AxisAlignedBB(x1, y1, z1, x1+1, y1+1, z1+1).grow(radius));
+		}
 		
 		
 		
