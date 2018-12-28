@@ -345,9 +345,12 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 			HashMap<Object, Object> eTbl = new HashMap<Object, Object>();
 			String entityClassName = e.getClass().getName();
 			entityClassName = entityClassName.substring(entityClassName.lastIndexOf('.')+1);
-			System.out.println(entityClassName);
+			//System.out.println(entityClassName);
 			eTbl.put("type", entityClassName);
 			eTbl.put("name", e.getName());
+			//NBTTagCompound tag = new NBTTagCompound();
+			//e.writeToNBTOptional(tag);
+			//System.out.println("testID: " + tag.getString("id"));
 			switch(entityClassName) {
 			case "EntityPlayerMP":
 				eTbl.put("type", "EntityPlayer");
@@ -392,18 +395,19 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 		if (timeSinceLastStab == 6) host.markChanged(host.indexOfMountable(this));
 		if (tickCounter < 20) return; //Only update every second (20 ticks)
 		tickCounter = 0;
+		boolean drainedMaint = (lockState != lockStateInactive) ? this.driverNode.tryChangeBuffer(-maintEnergy) : false;
 		switch(lockState) {
 		case lockStateInactive: //While inactive, do nothing
 			lockStrength = 0;
 			break;
 		case lockStateEstablishing: //While establishing the lock, it will be dropped if strength drops below 5% and it will become active if strength rises above 95%
 			lockStrength -= 2; //strength is lowered by 2% every 20 ticks
-			if (lockStrength < 5) lockState = lockStateInactive;
+			if (lockStrength < 5 || !drainedMaint) lockState = lockStateInactive;
 			else if (lockStrength >= 95) lockState = lockStateActive;
 			break;
 		case lockStateActive: //An active lock will decay if its strength drops below 5% and will overload if its strength rises above 110%
 			lockStrength--; //strength is lowered by 1% every 20 ticks
-			if (lockStrength < 5 || lockStrength > 110 || !this.driverNode.tryChangeBuffer(-maintEnergy)) lockState = lockStateInactive;
+			if (lockStrength < 5 || lockStrength > 110 || !drainedMaint) lockState = lockStateInactive;
 			break;
 		default: //Reset the lock state if something went wrong
 			lockState = lockStateInactive;
