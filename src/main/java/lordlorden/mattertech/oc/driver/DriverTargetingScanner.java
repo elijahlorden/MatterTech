@@ -12,6 +12,7 @@ import li.cil.oc.api.machine.Context;
 import li.cil.oc.api.network.Message;
 import li.cil.oc.api.network.Node;
 import li.cil.oc.api.network.Visibility;
+import lordlorden.mattertech.oc.MessageNames;
 import lordlorden.mattertech.util.Util;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
@@ -42,8 +43,6 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 	private int tickCounter;
 	private int lockState, lockStrength, timeSinceLastStab;
 	
-	private boolean lockBlocks, lockItems, lockPlayers, lockEntities;
-	
 	public DriverTargetingScanner(Rack host) {
 		this.host = host;
 		this.setNode(Network.newNode(this, Visibility.Network).withComponent("mt_targeting_scanner", Visibility.Network).withConnector(1000).create());
@@ -55,10 +54,6 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 		this.tZ2 = host.zPosition();
 		this.tRadius = 1;
 		this.tDimension = host.world().provider.getDimension();
-		this.lockBlocks = true;
-		this.lockItems = true;
-		this.lockPlayers = true;
-		this.lockEntities = true;
 		this.targetType = targetTypePos;
 		this.lockState = lockStateInactive;
 		this.lockStrength = 0;
@@ -93,10 +88,6 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 		tRadius = nbt.getDouble("tRadius");
 		tDimension = nbt.getInteger("tDim");
 		targetType = nbt.getInteger("tType");
-		lockBlocks = nbt.getBoolean("lockBlocks");
-		lockItems = nbt.getBoolean("lockItems");
-		lockEntities = nbt.getBoolean("lockEntities");
-		lockPlayers = nbt.getBoolean("lockPlayers");
 		lockState = nbt.getInteger("lockState");
 		lockStrength = nbt.getInteger("lockStrength");
 		timeSinceLastStab = nbt.getInteger("lastStab");
@@ -114,10 +105,6 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 		nbt.setDouble("tRadius", tRadius);
 		nbt.setInteger("tDim", tDimension);
 		nbt.setInteger("tType", targetType);
-		nbt.setBoolean("lockBlocks", lockBlocks);
-		nbt.setBoolean("lockItems", lockItems);
-		nbt.setBoolean("lockEntities", lockEntities);
-		nbt.setBoolean("lockPlayers", lockPlayers);
 		nbt.setInteger("lockState", lockState);
 		nbt.setInteger("lockStrength", lockStrength);
 		nbt.setInteger("lastStab", timeSinceLastStab);
@@ -130,39 +117,6 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 		nbt.setInteger("lockStrength", lockStrength);
 		nbt.setInteger("lastStab", timeSinceLastStab);
 		return nbt;
-	}
-	
-	
-	@Callback(doc = "If true, the scanner will include players in the target lock", getter = true, setter = true)
-	public Object[] lockPlayers(Context context, Arguments args) {
-		if (args.count() > 0) {
-			lockPlayers = args.checkBoolean(0);
-		}
-		return new Object[] {lockPlayers};
-	}
-	
-	@Callback(doc = "If true, the scanner will include entities in the target lock", getter = true, setter = true)
-	public Object[] lockEntities(Context context, Arguments args) {
-		if (args.count() > 0) {
-			lockEntities = args.checkBoolean(0);
-		}
-		return new Object[] {lockEntities};
-	}
-	
-	@Callback(doc = "If true, the scanner will include items in the target lock", getter = true, setter = true)
-	public Object[] lockItems(Context context, Arguments args) {
-		if (args.count() > 0) {
-			lockItems = args.checkBoolean(0);
-		}
-		return new Object[] {lockItems};
-	}
-	
-	@Callback(doc = "If true, the scanner will include blocks in the target lock", getter = true, setter = true)
-	public Object[] lockBlocks(Context context, Arguments args) {
-		if (args.count() > 0) {
-			lockBlocks = args.checkBoolean(0);
-		}
-		return new Object[] {lockBlocks};
 	}
 	
 	@Callback(doc = "The current lock strength", getter = true)
@@ -364,7 +318,6 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 	}
 	
 	private ArrayList<Entity> getEntities() {
-		if (!lockEntities) return new ArrayList<Entity>();
 		ArrayList<Entity> entities = null;
 		if (targetType == targetTypePos) {
 			entities = Util.getEntitiesInAreaInclusive(tX, tY, tZ, tX+1, tY+1, tZ+1, host.world(), Entity.class);
@@ -374,11 +327,6 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 			entities = Util.getEntitiesInAreaInclusiveRadius(tX, tY, tZ, tRadius, host.world(), Entity.class);
 		} else {
 			return new ArrayList<Entity>();
-		}
-		for (Iterator<Entity> iterator = entities.iterator(); iterator.hasNext();) {
-			Entity entity = iterator.next();
-			if (!lockPlayers && entity instanceof EntityPlayer) { iterator.remove(); continue; }
-			if (!lockItems && entity instanceof EntityItem) { iterator.remove(); continue; }
 		}
 		return entities;
 	}
@@ -413,6 +361,46 @@ public class DriverTargetingScanner extends RackMountableDriverBase {
 			lockState = lockStateInactive;
 		}
 		host.markChanged(host.indexOfMountable(this));
+	}
+
+	public double gettX() {
+		return tX;
+	}
+
+	public double gettY() {
+		return tY;
+	}
+
+	public double gettZ() {
+		return tZ;
+	}
+
+	public double gettX2() {
+		return tX2;
+	}
+
+	public double gettY2() {
+		return tY2;
+	}
+
+	public double gettZ2() {
+		return tZ2;
+	}
+
+	public double gettRadius() {
+		return tRadius;
+	}
+
+	public int gettDimension() {
+		return tDimension;
+	}
+
+	public int getTargetType() {
+		return targetType;
+	}
+
+	public int getLockState() {
+		return lockState;
 	}
 
 

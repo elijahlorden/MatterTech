@@ -4,8 +4,11 @@ import java.util.ArrayList;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.Vec3d;
+import net.minecraftforge.common.util.Constants;
 
 public class Pattern {
 	
@@ -15,14 +18,40 @@ public class Pattern {
 		entities = new ArrayList<EntityData>();
 	}
 	
+	private Pattern(ArrayList<EntityData> entities) {
+		this.entities = entities;
+	}
+	
 	/***
 	 * Save the Pattern object to a NBTTagCompound for storage
 	 * @return
 	 */
-	public NBTTagCompound saveToNBT() {
+	public NBTTagCompound serialize() {
+		NBTTagCompound nbt = new NBTTagCompound();
+		NBTTagList entityList = new NBTTagList();
+		for (EntityData e : entities) { //Save entities to the taglist
+			entityList.appendTag(e.serialize());
+		}
 		
 		
-		return null;
+		nbt.setTag("entities", entityList);
+		return nbt;
+	}
+	
+	/***
+	 * Deserialize a stored Pattern
+	 * @param data the NBTTagCompound holding the stored pattern
+	 * @return
+	 */
+	public static Pattern deserialize(NBTTagCompound data) {
+		NBTTagList entityTagList = data.getTagList("entities", Constants.NBT.TAG_COMPOUND);
+		ArrayList<EntityData> entities = new ArrayList<EntityData>();
+		for (int i=0; i<entityTagList.tagCount(); i++) {
+			entities.add(EntityData.deserialize(entityTagList.getCompoundTagAt(i)));
+		}
+		
+		
+		return new Pattern(entities);
 	}
 	
 	/***

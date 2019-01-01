@@ -8,6 +8,7 @@ import li.cil.oc.api.machine.Context;
 import li.cil.oc.api.network.Message;
 import li.cil.oc.api.network.Node;
 import li.cil.oc.api.network.Visibility;
+import lordlorden.mattertech.oc.MessageNames;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class DriverMolecularScanner extends RackMountableDriverBase {
@@ -18,7 +19,7 @@ public class DriverMolecularScanner extends RackMountableDriverBase {
 	protected final Rack host;
 	
 	private boolean scanning;
-	private int timeScanning;
+	private int tickCounter, timeScanning;
 	
 	private String tScannerAddress;
 	
@@ -27,6 +28,7 @@ public class DriverMolecularScanner extends RackMountableDriverBase {
 		this.setNode(Network.newNode(this, Visibility.Network).withComponent("mt_molecular_scanner", Visibility.Network).withConnector(1000).create());
 		scanning = false;
 		timeScanning = 0;
+		tickCounter = 0;
 		tScannerAddress = "";
 	}
 	
@@ -42,7 +44,11 @@ public class DriverMolecularScanner extends RackMountableDriverBase {
 	
 	@Override
     public void onMessage(final Message message) {
-		
+		if (message.name().equals(MessageNames.recLockInfo)) {
+			Object[] data = message.data();
+			if (data.length < 1) return;
+			
+		}
 	}
 	
 	@Override
@@ -76,26 +82,43 @@ public class DriverMolecularScanner extends RackMountableDriverBase {
 	
 	@Override
 	public void update() {
+		tickCounter++;
+		if (tickCounter < 10) return;
+		tickCounter = 0;
+		
+		
+		
 		
 	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	@Callback(doc = "function(address:string):number; Link to a targeting scanner; Returns 0 if successful, 1 if the address does not exist", getter = true)
-	public Object[] linkTargetingScanner(Context context, Arguments args) {
-		
-		
+	private Node findTargetingScanner(String address) {
+		for (Node node : driverNode.network().nodes()) {
+			if (node.address().contains(address) && node.host() instanceof DriverTargetingScanner) return node;
+		}
 		return null;
 	}
 	
+	@Callback(doc = "function(address:string):number; Link to a targeting scanner; Returns 0 if the scanner was found, 1 if it was not", limit = 10)
+	public Object[] linkTargetingScanner(Context context, Arguments args) {
+		String address = args.checkString(0);
+		if (findTargetingScanner(address) != null) {
+			tScannerAddress = address;
+			return new Object[] {0};
+		} else {
+			return new Object[] {1};
+		}
+	}
 	
+	@Callback(doc = "function():boolean; This will return true if there is a connected Targeting Scanner", limit = 10)
+	public Object[] isConnected(Context context, Arguments args) {
+		return new Object[] {(findTargetingScanner(tScannerAddress) != null)};
+	}
+	
+	@Callback(doc = "function():boolean; This will return true if there is a connected Targeting Scanner, and it has an active targeting lock", limit = 10)
+	public Object[] isLocked(Context context, Arguments args) {
+		DriverTargetingScanner env = (DriverTargetingScanner) findTargetingScanner(tScannerAddress).host();
+		return new Object[] {(env.getLockState() == DriverTargetingScanner.lockStateActive)};
+	}
 	
 	
 	
